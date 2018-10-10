@@ -1,0 +1,306 @@
+<%@ page buffer="none" autoFlush="true" %>
+<%@ include file="../authenticate.jsp" %>
+
+
+<%@ page import="java.sql.* "%>
+<%@ page import="com.infinitecampus.prism.* "%>
+<%@ page import="com.infinitecampus.user.User" %>
+<%@ page import="com.infinitecampus.utility.*" %>
+<%@ page import="com.infinitecampus.system.*" %>
+
+<%@ page import="java.io.*" %>
+<%@ page import="java.util.*" %>
+<%@ page import="java.net.*" %>
+<%@ include file="srsPath.jsp" %>
+
+
+
+<%
+
+// variables that already defined because of imports
+// appName
+// baseURL
+
+
+	Connection con = Prism.getConnection(appName);
+
+	String calendarID = Prism.getCookie(request, "calendarID");
+	String districtID = Prism.getCookie(request, "districtID");
+	String schoolID = Prism.getCookie(request, "schoolID");
+	String sectionID = Prism.getCookie(request, "sectionID");
+	String structureID = Prism.getCookie(request, "structureID");
+    String endYear = Prism.getCookie(request, "endYear");
+
+	Object contextID = (String) session.getAttribute("contextID");
+	Object contextIDType = (String) session.getAttribute("contextIDType");
+
+	CampusApp newurl = Prism.getApp(appName);
+
+	Object sessUser = session.getAttribute("user"); //this line needed for later Campus versions
+
+	String tempUser = sessUser.toString();
+	int userIndexStart = tempUser.indexOf("userID:") + 7;
+	int userIndexEnd = tempUser.indexOf(" ", userIndexStart);
+	String userID = tempUser.substring(userIndexStart,userIndexEnd);
+	
+	int unIndexStart = tempUser.indexOf("username:") + 9;
+	int unIndexEnd = tempUser.indexOf(" ", unIndexStart);
+	String username = tempUser.substring(unIndexStart,unIndexEnd);
+
+    //variables used when assembling the droplist lists
+	String schoolID2 = null;
+	String SchoolName = null;
+	String GradeLevelValue = null;
+	
+	//variables to gather the choices the user has made and concat them into the URL
+	String incidentIDValue = request.getParameter("IncidentList");
+    String eventNameValue = request.getParameter("IncidentList"); 
+	String prntNotifiedDateValue = request.getParameter("prntNotifiedDate");
+    String prntNotifiedTimeValue = request.getParameter("prntNotifiedTime"); 	
+	String rValue = request.getParameter("render");
+		
+	//variables needed for SQL statements to work
+	String SQL2 = null;
+	ResultSet result2 = null;
+	String SQL1 = null;
+	ResultSet result1 = null;
+	
+	//variables needed for page to know itself and call the right report
+	String dir = "Behavior-BEPRDN0001/";
+	String srsReportName = "NoticeOfSuspension-BEREDR0006";
+	String jspPageName = "NoticeOfSuspension-BEREDR0006";
+
+	
+%>
+
+<SCRIPT LANGUAGE="JavaScript">
+
+function log(message) {
+    if (!log.window_ || log.window_.closed) {
+        var win = window.open("", null, "width=1000,height=100," +
+                              "scrollbars=yes,resizable=yes,status=no," +
+                              "location=no,menubar=no,toolbar=no");
+        if (!win) return;
+        var doc = win.document;
+        doc.write("<html><head><title>URL</title></head>" +
+                  "<body></body></html>");
+        doc.close();
+        log.window_ = win;
+    }
+    var logLine = log.window_.document.createElement("div");
+    logLine.appendChild(log.window_.document.createTextNode(message));
+    log.window_.document.body.appendChild(logLine);
+}
+
+</SCRIPT>
+
+<%
+
+	try
+	{
+	
+
+		if (request.getParameter("callrspassthru") != null)
+		{
+
+		// Resolve null parameter
+
+		//if (personValue.equals("null")) {
+		//personValue = ":isnull=True";
+		//}
+		//else {personValue = "=" + personValue;}
+		
+		String ext = rValue.substring(0,3);
+		String render = rValue.substring(3,rValue.length());
+
+		//Build ReportServer URL
+				String prntNotifiedTimeOutput = prntNotifiedTimeValue.replace(" ","%20");
+		String prntNotifiedTimeOutput2 = prntNotifiedTimeOutput.replace("#","%23");
+		String prntNotifiedTimeOutput3 = prntNotifiedTimeOutput2.replace("^", "%5E");
+		String prntNotifiedTimeOutput4 = prntNotifiedTimeOutput3.replace("&", "%26");
+		String prntNotifiedTimeOutput5 = prntNotifiedTimeOutput4.replace("+", "%2B");
+		String prntNotifiedTimeOutput6 = prntNotifiedTimeOutput5.replace(">", "%3E");
+		String prntNotifiedTimeOutput7 = prntNotifiedTimeOutput6.replace("<", "%3C");
+		String prntNotifiedTimeOutput8 = prntNotifiedTimeOutput7.replace("[", "%5B");
+		String prntNotifiedTimeOutput9 = prntNotifiedTimeOutput8.replace("]", "%5D");
+		String prntNotifiedTimeOutput10 = prntNotifiedTimeOutput9.replace("{", "%7B");
+		String prntNotifiedTimeOutput11 = prntNotifiedTimeOutput10.replace("}", "%7D");
+		String prntNotifiedTimeOutput12 = prntNotifiedTimeOutput11.replace("\\", "%5C");
+		String prntNotifiedTimeOutput13 = prntNotifiedTimeOutput12.replace("|", "%7C");
+		String prntNotifiedTimeOutput14 = prntNotifiedTimeOutput13.replace("\"", "%22");
+		String prntNotifiedTimeOutput15 = prntNotifiedTimeOutput14.replace(",", "%2C");
+		
+		String url = path+dir+srsReportName+"&personID="+contextID+"&calendarID="+calendarID+"&incidentID="+incidentIDValue+"&prntNotifiedDate="+prntNotifiedDateValue+
+						"&prntNotifiedTime="+prntNotifiedTimeOutput15;
+		url += "&rs%3AFormat="+render+"";
+
+		//Launch report		
+
+		//out.println("<script>log('"+url+"');</script>");
+		response.sendRedirect(pagePath+"/rsPassThruMulti.jsp?url="+URLEncoder.encode(url)+"&ext="+ ext +"&srsReportName="+ srsReportName + "");
+
+		}
+%>
+
+
+<HTML>
+<HEAD>
+	<BASE HREF="<%= baseURL %>"/>
+	<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+	<TITLE>Report</TITLE>
+	<LINK rel="stylesheet" href="styles/lens.css" type="text/css"/>
+	<SCRIPT LANGUAGE="JavaScript">
+
+
+		var studentArray = new Array();
+
+<%
+
+%>
+
+		
+	</SCRIPT>
+	
+	</SCRIPT>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
+  <script src="//code.jquery.com/jquery-1.10.2.js"></script>
+  <script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+  <link rel="stylesheet" href="/resources/demos/style.css">
+  <script>
+  $(function() {
+    $( "#datepicker" ).datepicker();
+  });
+  </script>		
+</HEAD>
+
+
+<BODY bgcolor="#E0E0E0" topmargin="4" leftmargin="4">
+<FONT style="font-family: arial, helvetica, sans; font-size: 8pt; color: #000000; font-weight: normal;">
+ 
+<%	
+	} //ends the try block
+
+	catch(Exception ex)
+	{
+
+	System.out.println("error occurred" + ex.getMessage());
+		out.println("<b>"+ex.getMessage()+"</b>"); out.flush();
+		throw ex;
+	}
+
+%>
+
+
+	<FORM name = 'rsPass' action="<%= pagePath %><%= jspPageName %>.jsp?callrspassthru=true" method="post""> <!--(this version works for most districts-->
+	
+	<TABLE cellpadding="0" cellspacing="0" width="640">
+		<TR>
+		<TD class="wizardHeader" width="100%" style="height: 21px;">&nbsp;&nbsp;Notice of Suspension CCF-806</TD>
+		</TR>
+		
+		<TR>
+		<TD class="wizardInstruction" style="padding-top: 10px; padding-right: 30px; padding-left: 30px; height=33px;font-size: 10px; font-weight: bold;" valign="top">
+		  <p><span style="font-weight:bold; font-size:8pt;">Print a Notice of Suspension for the selected student and behavior event.</span>
+	      </p>
+		  <p><span style="font-weight:100; font-size:8pt;">This report generates a Notice of Suspension for Behavior Events with <span style="font-weight:bold;">Suspension</span> as a resolution. Resolution must have a start and end time in order for the report to populate correctly.</span>          
+	      </p>
+		  <p></TD>
+		</TR>
+
+		<TR>
+		<TD width="100%" height="2" background="images/hr.gif"></TD>
+		</TR>
+	</TABLE>
+	
+        <TR>
+			<TD class="detailFormColumn" style="padding-top: 10px;">
+              <p>
+                <%
+
+			Statement db2 = con.createStatement();
+			int newRecords2 = 0;
+		    SQL2 = "select distinct bh.incidentID " +
+					", CONVERT(VARCHAR(10),bh.incidentdate,110) + ' ' + bh.eventName as EventName " +
+					" from v_BehaviorDetail as bh with (nolock) " +
+					" inner join person as p with (nolock) on p.personID = bh.personID " +
+					" inner join [identity] as id with (nolock) on id.identityID = p.currentIdentityID " +
+					" inner join enrollment as e with (nolock) on e.personID = id.personID " +
+			 			" and e.calendarID = " + calendarID +
+					" inner join calendar as cal with (nolock) on cal.calendarID = bh.calendarID " +
+					" inner join school as sch with (nolock) on sch.schoolID = cal.schoolID " +
+					" where bh.personID = " + contextID +
+						" and bh.calendarID = " + calendarID +
+						" and bh.resolutionCode = 'SUS' " ;
+
+			result2 = db2.executeQuery(SQL2);
+
+
+			out.println("<label>Select Behavior Event:</label><br/><select name=IncidentList id=16><option value='NULL' selected='false'> </option>");
+			while(result2.next())
+			{ incidentIDValue=result2.getString(1); 
+			eventNameValue = result2.getString(2);
+			out.println("<option value='"+incidentIDValue+"'>"+eventNameValue+"</option>");}
+			out.println("</select>");
+			
+			//con.close();
+
+%>
+                <FONT style="font-family: arial, helvetica, sans; font-size: 8pt; color: #000000; font-weight: normal;"><span class="detailFormColumn" style="padding-top: 0px;">
+
+                </span></FONT><br/>
+              </p>
+          </TD>	
+		</TR><TR>
+		
+				<TD class="detailFormColumn" style="padding-top: 10px;">
+                Select Date Parent Was Notified (Optional):  </br>
+                <input type="text" name="prntNotifiedDate" id="datepicker">
+                <p>
+                  <label for="tempRemovalDate">Enter Time Parent Was Notified (Optional):</label></br>
+                  <input type="text" name="prntNotifiedTime" id="textfield">
+                </p></TD>
+                <TR>
+		
+				<TD class="detailFormColumn" style="padding-top: 10px;">&nbsp;</TD>
+		</TR>
+                <TR>
+                    <td ></br><br></td>
+                </TR>
+                
+		</TR>
+		<tr>
+		<td><small><br><br><label style="font-size:small;font-family:arial, helvetica, sans-serif">Please select the report rendering format</label>&nbsp;<strong></strong>
+			<span style="font-size:small;font-family:arial, helvetica, sans-serif"><br></span><input type="radio" name="render" value="pdfPDF"><span style="font-size:small;font-family:arial, helvetica, sans-serif">PDF<br></span>
+			<input type="radio" name="render" value="docWORD"><span style="font-size:small;font-family:arial, helvetica, sans-serif">Word</span> </small><br></div>  </td></tr>
+		
+		
+		
+		
+			<TR>
+			
+				<TD class="detailFormColumn" style="padding-top: 10px;">
+	
+		</TD>
+		</TR>
+		
+
+		
+		
+		
+
+		
+		<TR>
+		<TD class="detailFormColumn" style="padding-top: 10px;">
+		
+		<TR>
+		<TD><br><br>
+				<input type="submit" id="9" value="Generate Report"/>
+		</TD>		
+		<TD></TD>
+		</TR>
+	</TABLE>
+	</FORM>	
+
+</FONT>
+</BODY>
+</HTML>
